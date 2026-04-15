@@ -1,0 +1,109 @@
+# 宝塔面板专用 Docker Compose 配置
+# 完全图形界面操作，无需命令行！
+
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: erp-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: erp_root_2026
+      MYSQL_DATABASE: erp_trade
+      MYSQL_USER: erp_user
+      MYSQL_PASSWORD: erp_password_2026
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    networks:
+      - erp_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端服务（先构建镜像）
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: erp-backend
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/erp_trade?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: erp_user
+      SPRING_DATASOURCE_PASSWORD: erp_password_2026
+      JWT_SECRET: erp-jwt-secret-key-2026-must-be-long-enough-for-security
+      TZ: Asia/Shanghai
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - erp_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/companies"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 前端服务（先构建镜像）
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: erp-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - erp_network
+
+# 数据卷（永久保存数据）
+volumes:
+  mysql_data:
+    driver: local
+
+# 网络（容器间通信）
+networks:
+  erp_network:
+    driver: bridge
+
+# ============================================
+# 宝塔面板使用说明：
+# ============================================
+#
+# 1. 安装 Docker 管理器插件
+#    - 登录宝塔面板
+#    - 软件商店 → 搜索 "Docker 管理器" → 安装
+#
+# 2. 导入 Compose 项目
+#    - Docker 管理器 → Compose → 添加
+#    - 名称：erp-trade
+#    - 路径：/www/wwwroot/erp-trade
+#    - 文件：docker-compose-baota.yml
+#    - 点击 "创建并启动"
+#
+# 3. 等待 3-5 分钟
+#    - 系统会自动构建镜像并启动容器
+#    - 可以在 "容器管理" 中查看进度
+#
+# 4. 访问系统
+#    - 浏览器打开：http://你的服务器 IP
+#    - 登录：admin / admin123
+#
+# ============================================

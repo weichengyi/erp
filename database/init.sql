@@ -373,14 +373,14 @@ SELECT
     cp.position,
     cp.company_id,
     c.company_name AS current_company,
+    cp.status AS person_status,
     pm.movement_type,
     pm.from_company_id,
     fc.company_name AS from_company_name,
     pm.to_company_id,
     tc.company_name AS to_company_name,
     pm.movement_date,
-    pm.new_position,
-    pm.status
+    pm.new_position
 FROM contact_person cp
 LEFT JOIN company c ON cp.company_id = c.id
 LEFT JOIN person_movement pm ON cp.id = pm.person_id

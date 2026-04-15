@@ -1,6 +1,48 @@
 # 贸易行业序列号全流程追踪管理系统
 
-> 企业级 Java Spring Boot + MySQL 解决方案
+> 企业级 ERP 解决方案 - **支持 Docker 一键部署**
+
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://adoptium.net/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Vue](https://img.shields.io/badge/Vue-3-green.svg)](https://vuejs.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
+
+---
+
+## 🚀 一键部署（推荐）⭐
+
+### 方式一：Docker 一键部署
+
+**5 分钟完成部署！**
+
+```bash
+# 1. 克隆仓库
+git clone https://github.com/weichengyi/erp.git
+cd erp-trade
+
+# 2. 一键部署
+bash docker-deploy.sh
+```
+
+**部署完成后访问：**
+- **前端**: http://localhost
+- **后端**: http://localhost:8080
+- **数据库**: localhost:3306
+
+**默认账户：**
+```
+用户名：admin
+密码：admin123
+```
+
+> ⚠️ 首次登录后请立即修改密码！
+
+### 方式二：传统部署
+
+详见：[QUICKSTART.md](QUICKSTART.md)
+
+---
 
 ## 📋 项目简介
 
@@ -18,19 +60,82 @@
 | 资产编码 | 自动生成 (YYYYMMDD+4 位)、SN-资产绑定 |
 | 业务单据 | 销售订单、采购订单、出入库、售后服务 |
 | 权限管控 | 部门隔离、数据权限、角色管理 |
+| **报表统计** | **数据导出 (Excel)、统计图表** |
 
 ---
 
-## 🚀 快速开始
+## 📦 Docker 部署架构
 
-### 环境要求
+```
+┌─────────────────────────────────────┐
+│        Nginx (Port 80)              │
+│  ┌─────────────────────────────┐    │
+│  │ Vue 3 前端 (静态文件)        │    │
+│  └─────────────────────────────┘    │
+│            │                        │
+│            │ /api 代理               │
+│            ▼                        │
+│  ┌─────────────────────────────┐    │
+│  │ Spring Boot 后端 (Port 8080) │    │
+│  └─────────────────────────────┘    │
+│            │                        │
+│            │ JDBC                   │
+│            ▼                        │
+│  ┌─────────────────────────────┐    │
+│  │ MySQL 8.0 (Port 3306)       │    │
+│  │ 数据卷：mysql_data          │    │
+│  └─────────────────────────────┘    │
+└─────────────────────────────────────┘
+```
 
+---
+
+## 🎯 快速开始
+
+### 前置要求
+
+**Docker 部署：**
+- Docker 20.10+
+- Docker Compose 2.0+
+
+**传统部署：**
 - JDK 17+
 - MySQL 8.0+
 - Maven 3.6+
+- Node.js 18+ (前端开发)
 
-### 1. 数据库初始化
+### Docker 部署步骤
 
+#### 1. 检查 Docker 环境
+```bash
+docker --version
+docker-compose --version
+```
+
+#### 2. 一键部署
+```bash
+git clone https://github.com/weichengyi/erp.git
+cd erp-trade
+bash docker-deploy.sh
+```
+
+#### 3. 验证部署
+```bash
+docker-compose ps
+```
+
+应显示：
+- erp-mysql (healthy)
+- erp-backend (healthy)
+- erp-frontend
+
+#### 4. 访问系统
+- 浏览器打开：http://localhost
+- 登录：admin / admin123
+
+### 传统部署步骤
+
+#### 1. 数据库初始化
 ```bash
 # 登录 MySQL
 mysql -u root -p
@@ -39,10 +144,8 @@ mysql -u root -p
 source database/init.sql
 ```
 
-### 2. 配置数据库连接
-
+#### 2. 配置数据库连接
 编辑 `src/main/resources/application.yml`:
-
 ```yaml
 spring:
   datasource:
@@ -51,21 +154,16 @@ spring:
     password: your_password
 ```
 
-### 3. 编译运行
-
+#### 3. 编译运行
 ```bash
 # 编译项目
 mvn clean package -DskipTests
 
 # 运行应用
 mvn spring-boot:run
-
-# 或直接运行 jar
-java -jar target/trade-sn-tracking-1.0.0-SNAPSHOT.jar
 ```
 
-### 4. 访问系统
-
+#### 4. 访问系统
 ```
 后端 API: http://localhost:8080
 ```
@@ -106,6 +204,16 @@ java -jar target/trade-sn-tracking-1.0.0-SNAPSHOT.jar
 | POST | `/api/assets` | 创建资产 |
 | PUT | `/api/assets/{id}` | 更新资产 |
 | DELETE | `/api/assets/{id}` | 删除资产 |
+
+### 报表统计
+
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| GET | `/api/reports/dashboard-stats` | 仪表盘统计 |
+| GET | `/api/reports/company-stats` | 公司统计 |
+| GET | `/api/reports/export/companies` | 导出公司数据 (Excel) |
+| GET | `/api/reports/export/assets` | 导出资产数据 (Excel) |
+| GET | `/api/reports/export/product-sns` | 导出 SN 码数据 (Excel) |
 
 ---
 
@@ -149,6 +257,7 @@ java -jar target/trade-sn-tracking-1.0.0-SNAPSHOT.jar
 | `purchase_order` | 采购订单 |
 | `stock_in_out` | 出入库记录 |
 | `after_sales` | 售后服务单 |
+| `sys_log` | 系统日志 |
 
 ---
 
@@ -168,50 +277,130 @@ java -jar target/trade-sn-tracking-1.0.0-SNAPSHOT.jar
 
 ```
 erp-trade/
-├── database/
-│   └── init.sql              # 数据库初始化脚本
-├── src/main/java/com/erp/tracksn/
-│   ├── TradeSnTrackingApplication.java  # 启动类
-│   ├── entity/               # 实体类
-│   │   ├── Company.java
-│   │   ├── CompanyRelation.java
-│   │   ├── ContactPerson.java
-│   │   ├── PersonMovement.java
-│   │   ├── ProductSn.java
-│   │   ├── Asset.java
-│   │   ├── SalesOrder.java
-│   │   └── SysUser.java
-│   ├── repository/           # 数据访问层
-│   │   ├── CompanyRepository.java
-│   │   ├── CompanyRelationRepository.java
-│   │   ├── ProductSnRepository.java
-│   │   └── AssetRepository.java
-│   ├── service/              # 业务逻辑层
-│   │   └── AssetService.java
-│   └── controller/           # 控制器层
-│       ├── CompanyController.java
-│       ├── ProductSnController.java
-│       └── AssetController.java
-├── src/main/resources/
-│   └── application.yml       # 配置文件
+├── 📂 database/              # 数据库脚本
+│   └── init.sql
+├── 📂 src/main/java/         # Java 后端代码
+│   └── com/erp/tracksn/
+│       ├── entity/           # 实体类
+│       ├── repository/       # 数据访问层
+│       ├── service/          # 业务逻辑层
+│       └── controller/       # 控制器层
+├── 📂 frontend/              # Vue 3 前端
+│   ├── src/
+│   ├── package.json
+│   └── Dockerfile
+├── 📂 Docker 部署 ⭐
+│   ├── docker-compose.yml    # Docker 编排
+│   ├── Dockerfile            # 后端容器
+│   ├── docker-deploy.sh      # 一键部署
+│   ├── docker-backup.sh      # 数据备份
+│   └── docker-restore.sh     # 数据恢复
+├── 📂 文档
+│   ├── DOCKER.md             # Docker 部署文档
+│   ├── API_GUIDE.md          # API 接口文档
+│   ├── QUICKSTART.md         # 快速开始
+│   └── DELIVERY.md           # 项目交付文档
 ├── pom.xml                   # Maven 配置
-├── README.md                 # 本文档
-└── PROJECT_PLAN.md           # 开发计划
+└── README.md                 # 本文档
 ```
 
 ---
 
-## 🔧 开发计划
+## 🛠️ 常用命令
 
-详见 `PROJECT_PLAN.md`
+### Docker 部署
 
-- [x] Phase 1: 基础架构
-- [ ] Phase 2: 关联公司管理
-- [ ] Phase 3: 人员流动追踪
-- [ ] Phase 4: SN 码与资产管理
-- [ ] Phase 5: 业务单据
-- [ ] Phase 6: 权限管控
-- [ ] Phase 7: 报表统计
+```bash
+# 一键部署
+bash docker-deploy.sh
+
+# 查看状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+bash docker-stop.sh
+
+# 备份数据
+bash docker-backup.sh
+
+# 恢复数据
+bash docker-restore.sh ./backups/erp_trade_*.sql.gz
+```
+
+### 传统部署
+
+```bash
+# 编译
+mvn clean package -DskipTests
+
+# 运行
+mvn spring-boot:run
+
+# 打包
+mvn clean package
+```
+
+---
+
+## 📚 文档
+
+| 文档 | 说明 |
+|------|------|
+| [DOCKER.md](DOCKER.md) | ⭐ Docker 部署完整文档 |
+| [README_DOCKER_SUMMARY.md](README_DOCKER_SUMMARY.md) | ⭐ 快速开始 |
+| [DEPLOYMENT_OPTIONS.md](DEPLOYMENT_OPTIONS.md) | 部署方式对比 |
+| [API_GUIDE.md](API_GUIDE.md) | API 接口文档 |
+| [QUICKSTART.md](QUICKSTART.md) | 传统部署指南 |
+| [DELIVERY.md](DELIVERY.md) | 项目交付文档 |
+
+---
+
+## ⚠️ 生产环境配置
+
+部署到生产环境前，请修改：
+
+### 1. 数据库密码
+编辑 `docker-compose.yml`:
+```yaml
+environment:
+  MYSQL_ROOT_PASSWORD: 你的强密码
+  MYSQL_PASSWORD: 你的强密码
+```
+
+### 2. JWT 密钥
+编辑 `docker-compose.yml`:
+```yaml
+environment:
+  JWT_SECRET: 你的随机生成密钥
+```
+
+### 3. 启用 HTTPS
+使用 Nginx Proxy Manager 或 Let's Encrypt
+
+### 4. 配置防火墙
+```bash
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw deny 3306/tcp
+```
+
+---
+
+## 🎯 开发计划
+
+详见：[PROJECT_PLAN.md](PROJECT_PLAN.md)
+
+- [x] Phase 1: 基础架构 ✅
+- [x] Phase 2: 关联公司管理 ✅
+- [x] Phase 3: 人员流动追踪 ✅
+- [x] Phase 4: SN 码与资产管理 ✅
+- [x] Phase 5: 业务单据 ✅
+- [x] Phase 6: 权限管控 ✅
+- [x] Phase 7: 报表统计 ✅
+- [x] Docker 部署 ✅
 
 ---
 
@@ -223,4 +412,28 @@ MIT License
 
 ## 📞 技术支持
 
-如有问题，请联系开发团队。
+**仓库地址**: https://github.com/weichengyi/erp
+
+**文档**:
+- [Docker 部署指南](DOCKER.md)
+- [API 接口文档](API_GUIDE.md)
+- [快速开始](README_DOCKER_SUMMARY.md)
+
+---
+
+## 🎉 快速开始
+
+```bash
+# 克隆仓库
+git clone https://github.com/weichengyi/erp.git
+cd erp-trade
+
+# 一键部署
+bash docker-deploy.sh
+
+# 访问系统
+# http://localhost
+# 登录：admin / admin123
+```
+
+**5 分钟完成部署！** 🚀

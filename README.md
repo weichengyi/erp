@@ -52,7 +52,37 @@
 
 ---
 
-### 方式二：Docker 命令行部署
+### 方式二：云平台一键部署（Git + Docker Compose）⭐⭐
+
+**适合云平台集成，用户点击"一键部署"即可**
+
+**部署原理：**
+```
+用户点击"一键部署"
+    ↓
+云平台自动执行：
+1. git clone https://github.com/weichengyi/erp.git
+2. cd erp-trade
+3. docker-compose -f docker-compose-cloud.yml up -d
+4. 等待 3-5 分钟
+    ↓
+完成！
+```
+
+**云平台配置：**
+
+| 配置项 | 值 |
+|--------|-----|
+| **Git 仓库** | https://github.com/weichengyi/erp.git |
+| **Compose 文件** | docker-compose-cloud.yml |
+| **端口映射** | 80:80, 8080:8080 |
+| **数据卷** | mysql_data（持久化） |
+
+**详细集成文档**: [CLOUD_DEPLOY.md](CLOUD_DEPLOY.md)
+
+---
+
+### 方式三：Docker 命令行部署
 
 **5 分钟完成部署！**
 

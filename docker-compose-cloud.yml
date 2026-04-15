@@ -1,0 +1,119 @@
+# 云平台一键部署配置
+# 适用于：Git + Docker Compose 方式
+# 
+# 云平台只需要：
+# 1. 从 GitHub 拉取代码
+# 2. 执行 docker-compose up -d
+# 3. 完成！
+
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: erp-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-erp_root_2026}
+      MYSQL_DATABASE: erp_trade
+      MYSQL_USER: erp_user
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-erp_password_2026}
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=Asia/Shanghai
+    networks:
+      - erp_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端服务
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: erp-backend
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/erp_trade?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: erp_user
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-erp_password_2026}
+      JWT_SECRET: ${JWT_SECRET:-erp-jwt-secret-key-2026-must-be-long-enough}
+      TZ: Asia/Shanghai
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - erp_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/companies"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: erp-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - erp_network
+
+# 数据卷
+volumes:
+  mysql_data:
+    driver: local
+
+# 网络
+networks:
+  erp_network:
+    driver: bridge
+
+# ============================================
+# 云平台部署说明
+# ============================================
+#
+# 1. 从 Git 仓库拉取代码
+#    git clone https://github.com/weichengyi/erp.git
+#
+# 2. 进入项目目录
+#    cd erp-trade
+#
+# 3. 执行一键部署
+#    docker-compose -f docker-compose-cloud.yml up -d
+#
+# 4. 查看部署状态
+#    docker-compose ps
+#
+# 5. 访问系统
+#    http://服务器 IP
+#
+# ============================================
+# 环境变量（可选，有默认值）
+# ============================================
+# MYSQL_ROOT_PASSWORD - MySQL root 密码（默认：erp_root_2026）
+# MYSQL_PASSWORD - MySQL 用户密码（默认：erp_password_2026）
+# JWT_SECRET - JWT 密钥（默认：自动生成）
+#
+# 云平台可以让用户自定义这些变量
+# ============================================

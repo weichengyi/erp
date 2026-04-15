@@ -55,14 +55,16 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { authApi } from '../api'
+import api from '../api'
 
 const router = useRouter()
 const formRef = ref(null)
 const loading = ref(false)
+const checkingInstall = ref(true)
 
 const loginForm = reactive({
   username: '',
@@ -101,6 +103,25 @@ const handleLogin = async () => {
     loading.value = false
   }
 }
+
+// 检查安装状态
+const checkInstallStatus = async () => {
+  try {
+    const response = await api.get('/install/status')
+    if (!response.data.installed) {
+      // 系统未安装，跳转到安装页面
+      router.push('/install')
+    }
+  } catch (error) {
+    console.error('检查安装状态失败:', error)
+  } finally {
+    checkingInstall.value = false
+  }
+}
+
+onMounted(() => {
+  checkInstallStatus()
+})
 </script>
 
 <style scoped>

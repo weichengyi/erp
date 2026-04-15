@@ -7,6 +7,11 @@ const routes = [
     component: () => import('../views/Login.vue')
   },
   {
+    path: '/install',
+    name: 'Install',
+    component: () => import('../views/Install.vue')
+  },
+  {
     path: '/',
     component: () => import('../layouts/MainLayout.vue'),
     redirect: '/dashboard',
